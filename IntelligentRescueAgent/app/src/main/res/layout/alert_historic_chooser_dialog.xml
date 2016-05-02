@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/rgAlerts"
+        android:layout_gravity="center"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:text="Todas"
+            android:id="@+id/rbAll"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/radioButton"
+            android:layout_toEndOf="@+id/radioButton"
+            android:layout_weight="1" />
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:text="Hoy"
+            android:id="@+id/rbToday"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/radioButton"
+            android:layout_toEndOf="@+id/radioButton"
+            android:layout_weight="1" />
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:text="Semanal"
+            android:id="@+id/rbWeek"
+            android:layout_above="@+id/textView"
+            android:layout_alignParentRight="true"
+            android:layout_weight="1" />
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:text="Mensual"
+            android:id="@+id/rbMonth"
+            android:layout_above="@+id/textView"
+            android:layout_weight="1" />
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btnOk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ok"
+        android:background="#00c3ef"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="1"
+        android:layout_below="@+id/rgAlerts"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+</RelativeLayout>

@@ -1,0 +1,25 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:sample="http://schemas.android.com/apk/res-auto">>
+
+    <PreferenceCategory android:title="Configuraciones Generales" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="prefEnabledNotification"
+            android:summary="Recibir notificaciones cuando un usuario reporte una alerta"
+            android:title="Habilitar notificaciones" >
+        </CheckBoxPreference>
+
+        <com.pavelsikun.seekbarpreference.SeekBarPreference
+            android:key="pregRange"
+            android:title="Rango de recepción de alertas"
+            android:summary="Rango"
+            android:enabled="true"
+            android:defaultValue="1"
+            sample:msbp_minValue="1"
+            sample:msbp_maxValue="10"
+            sample:msbp_interval="1"
+            sample:msbp_measurementUnit="km"/>
+    </PreferenceCategory>
+</PreferenceScreen>

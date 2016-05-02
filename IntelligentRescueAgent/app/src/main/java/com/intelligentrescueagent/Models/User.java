@@ -3,7 +3,7 @@ package com.intelligentrescueagent.Models;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by LENOVO on 02/03/2016.
+ * Created by Angel Buzany on 02/03/2016.
  */
 public class User {
 
@@ -13,10 +13,10 @@ public class User {
     @SerializedName("FacebookID")
     private String facebookID;
 
-    @SerializedName("alias")
+    @SerializedName("Alias")
     private String alias;
 
-    @SerializedName("email")
+    @SerializedName("Email")
     private String email;
 
     @SerializedName("CreationDate")

@@ -13,17 +13,17 @@ import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
 import com.intelligentrescueagent.Framework.Networking.Http.ServiceGenertor;
+import com.intelligentrescueagent.Framework.Settings.GlobalSettings;
 import com.intelligentrescueagent.Models.User;
 
 import org.json.JSONObject;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -34,29 +34,32 @@ import retrofit2.Response;
  */
 public class LoginActivity extends AppCompatActivity {
 
-    private CallbackManager callbackManager;
+    private CallbackManager mCallbackManager;
     private APIService mHTTPClient;
-    private LoginButton btnFbLogin;
+    private LoginButton mBtnFbLogin;
+    private LoginManager mLoginManager;
 
     private String mUserId;
+    private String mEmail;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //Initialize
-        mHTTPClient = ServiceGenertor.createService(APIService.class);
-
         FacebookSdk.sdkInitialize(getApplicationContext());
 
-        callbackManager = CallbackManager.Factory.create();
+        mCallbackManager = CallbackManager.Factory.create();
+
+        GlobalSettings.getInstance().setLoginManager(LoginManager.getInstance());
 
         setContentView(R.layout.activity_login);
 
-        btnFbLogin = (LoginButton)findViewById(R.id.btnFBLogin);
-        btnFbLogin.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        mBtnFbLogin = (LoginButton)findViewById(R.id.btnFBLogin);
+        mBtnFbLogin.setReadPermissions("public_profile");
+        mBtnFbLogin.setReadPermissions("email");
+        mBtnFbLogin.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                OpenMapActivity();
+                OpenMainActivity();
             }
 
             @Override
@@ -65,13 +68,17 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onError(FacebookException e) {
+                Log.d("LoginActivity", "onError: " + e.getMessage());
             }
         });
+
+        //Initialize
+        mHTTPClient = ServiceGenertor.createService(APIService.class);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        callbackManager.onActivityResult(requestCode, resultCode, data);
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -87,26 +94,33 @@ public class LoginActivity extends AppCompatActivity {
         AppEventsLogger.activateApp(this);
 
         if(isLoggedIn()){
-            OpenMapActivity();
+            OpenMainActivity();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
         // Logs 'app deactivate' App Event.
         AppEventsLogger.deactivateApp(this);
     }
 
-    //////////////////////Methods//////////////////////
+    ////////////////////////////////Methods////////////////////////////////
 
     private boolean isLoggedIn() {
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
         return accessToken != null;
     }
 
-    private void OpenMapActivity(){
+    private void OpenMainActivity(){
+
+        //Open MainActivity
+        /*Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("userId", "1140560245961978");
+        intent.putExtra("email", "angel_lr1908@hotmail.com");
+        intent.putExtra("alias", "Enguel");*/
+
+        //startActivity(intent);
 
         AccessToken token = AccessToken.getCurrentAccessToken();
 
@@ -115,42 +129,44 @@ public class LoginActivity extends AppCompatActivity {
                 new GraphRequest.GraphJSONObjectCallback() {
                     @Override
                     public void onCompleted(JSONObject me, GraphResponse response) {
-
-                        mUserId = me.optString("id");
-
                         try {
-                            Call<User> getUserByFacebookIdCall = mHTTPClient.getUserByFacebookId(mUserId);
-                            getUserByFacebookIdCall.enqueue(new Callback<User>() {
-                                @Override
-                                public void onResponse(Call<User> call, Response<User> response) {
-                                    User user = response.body();
+                            if(me != null){
+                                mUserId = me.optString("id");
+                                mEmail = me.optString("email");
 
-                                    //If the user doesn't exist so regiter it
-                                    if(user == null){
+                                Call<User> getUserByFacebookIdCall = mHTTPClient.getUserByFacebookId(mUserId);
+                                getUserByFacebookIdCall.enqueue(new Callback<User>() {
+                                    @Override
+                                    public void onResponse(Call<User> call, Response<User> response) {
+                                        User user = response.body();
+                                        //If the user doesn't exist so regiter it
+                                        if(user == null){
+                                            //Open RegisterActivity
+                                            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+                                            intent.putExtra("userId", mUserId);
+                                            intent.putExtra("email", mEmail);
 
-                                        Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-                                        intent.putExtra("userId", mUserId);
+                                            startActivity(intent);
+                                        }
+                                        else{
+                                            //Open MainActivity
+                                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                            intent.putExtra("userId", user.getFacebookID());
+                                            intent.putExtra("email", user.getEmail());
+                                            intent.putExtra("alias", user.getAlias());
 
-                                        startActivity(intent);
+                                            startActivity(intent);
+                                        }
                                     }
-                                    else{
-                                        //Open MainActivity
-                                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                        intent.putExtra("userId", user.getFacebookID());
-                                        intent.putExtra("alias", user.getAlias());
-
-                                        startActivity(intent);
+                                    @Override
+                                    public void onFailure(Call<User> call, Throwable t) {
+                                        Log.e("getUserByFacebookIdCall", "onFailure: " + t.getMessage());
                                     }
-                                }
-
-                                @Override
-                                public void onFailure(Call<User> call, Throwable t) {
-                                    Log.e("MainActivity", "onFailure: " + t.getMessage());
-                                }
-                            });
+                                });
+                            }
                         }
                         catch (Exception e){
-                            Log.e("MainActivity", "onCompleted: " +  e.getMessage());
+                            Log.e("LoginActivity", "onCompleted: " +  e.getMessage());
                         }
                     }
                 });

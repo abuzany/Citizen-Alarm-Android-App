@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:id="@+id/imageView2"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:scaleType="center"
+        android:contentDescription="@string/app_name"
+        android:background="#ff0022"
+        android:text="REPORTAR"
+        android:textColor="#ffffff"
+        android:textStyle="bold"
+        android:textSize="40dp"
+        android:textAlignment="center" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textMultiLine"
+        android:ems="10"
+        android:hint="Descripción en 140 caracteres"
+        android:id="@+id/txtAlertDescription"
+        android:layout_gravity="bottom|left"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/rgAlerts" />
+
+    <Button
+        android:id="@+id/btnSendAlert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enviar"
+        android:background="#00c3ef"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:layout_below="@+id/tvCharCount"
+        android:layout_centerHorizontal="true" />
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:id="@+id/rgAlerts"
+        android:layout_below="@+id/imageView2">
+
+        <RadioButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Robo"
+            android:id="@+id/rbRobery"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/radioButton"
+            android:layout_toEndOf="@+id/radioButton"
+            android:layout_weight="1" />
+
+        <RadioButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Secuestro"
+            android:id="@+id/rbKidnap"
+            android:layout_above="@+id/textView"
+            android:layout_alignParentRight="true"
+            android:layout_weight="1" />
+
+        <RadioButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Accidente"
+            android:id="@+id/rbAccident"
+            android:layout_above="@+id/textView"
+            android:layout_weight="1" />
+
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="140/140"
+        android:id="@+id/tvCharCount"
+        android:layout_below="@+id/txtAlertDescription"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>

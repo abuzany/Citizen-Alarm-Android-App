@@ -1,60 +1,39 @@
 package com.intelligentrescueagent;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.app.LoaderManager.LoaderCallbacks;
 
-import android.content.CursorLoader;
-import android.content.Loader;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.AsyncTask;
-
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
-import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
 import com.intelligentrescueagent.Framework.Networking.Http.ServiceGenertor;
 import com.intelligentrescueagent.Models.User;
+import com.intelligentrescueagent.Models.UserConfiguration;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static android.Manifest.permission.READ_CONTACTS;
-
 public class RegisterActivity extends AppCompatActivity{
+
+    private static final String TAG = "RegisterActivity";
 
     private APIService mHTTPClient;
     private User mUser;
 
-    private EditText txtAlias;
+    private EditText mTxtAlias;
 
     private String mUserId;
+    private String mEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +44,13 @@ public class RegisterActivity extends AppCompatActivity{
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             mUserId = extras.getString("userId");
+            mEmail = extras.getString("email");
         }
 
         //Initialize
         mHTTPClient = ServiceGenertor.createService(APIService.class);
 
-        txtAlias = (EditText) findViewById(R.id.txtAlias);
+        mTxtAlias = (EditText) findViewById(R.id.txtAlias);
 
         Button btnRegister = (Button) findViewById(R.id.btnRegister);
         btnRegister.setOnClickListener(new OnClickListener() {
@@ -79,12 +59,32 @@ public class RegisterActivity extends AppCompatActivity{
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 Date date = new Date();
 
+                UserConfiguration usrConfig = new UserConfiguration();
+                usrConfig.setFacebookID(mUserId);
+                usrConfig.setRange(1);
+                usrConfig.setEnabledNotifications(true);
+
+                //Create UserConfiguration
+                Call<UserConfiguration> postUserConfiguration = mHTTPClient.postUserConfiguration(usrConfig);
+                postUserConfiguration.enqueue(new Callback<UserConfiguration>() {
+                    @Override
+                    public void onResponse(Call<UserConfiguration> call, Response<UserConfiguration> response) {
+
+                    }
+
+                    @Override
+                    public void onFailure(Call<UserConfiguration> call, Throwable t) {
+                        Log.e(TAG, "PostUserConfiguration->onFailure: " + t.getMessage());
+                    }
+                });
+
                 mUser = new User();
                 mUser.setFacebookID(mUserId);
-                mUser.setAlias(txtAlias.getText().toString());
-                mUser.setEmail("");
+                mUser.setEmail(mEmail);
+                mUser.setAlias(mTxtAlias.getText().toString());
                 mUser.setCreationDate(dateFormat.format(date));
 
+                //Create user
                 Call<User> postUserCall = mHTTPClient.postUser(mUser);
                 postUserCall.enqueue(new Callback<User>() {
                     @Override
@@ -92,6 +92,7 @@ public class RegisterActivity extends AppCompatActivity{
                         //Open MainActivity
                         Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
                         intent.putExtra("userId", mUser.getFacebookID());
+                        intent.putExtra("email", mUser.getEmail());
                         intent.putExtra("alias", mUser.getAlias());
 
                         startActivity(intent);
@@ -99,7 +100,7 @@ public class RegisterActivity extends AppCompatActivity{
 
                     @Override
                     public void onFailure(Call<User> call, Throwable t) {
-                        Log.e("postAlertCall", "onFailure: " + t.getMessage());
+                        Log.e(TAG, "PostUserCall->onFailure: " + t.getMessage());
                     }
                 });
             }

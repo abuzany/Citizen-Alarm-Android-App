@@ -1,5 +1,7 @@
 package com.intelligentrescueagent.Framework.Networking.Http;
 
+import com.intelligentrescueagent.Framework.Settings.GlobalSettings;
+
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -9,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 public class ServiceGenertor {
 
-    public static final String API_BASE_URL = "http://192.168.1.69:61660/api/";
+    public static final String API_BASE_URL = GlobalSettings.getInstance().getAPIRestAddress();
 
     private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
 

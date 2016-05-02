@@ -1,17 +1,19 @@
 package com.intelligentrescueagent.Framework.AIAgent;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.intelligentrescueagent.Framework.Settings.GlobalSettings;
 import com.intelligentrescueagent.MainActivity;
 import com.intelligentrescueagent.Models.Alert;
 
@@ -19,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -31,24 +35,20 @@ public class Agent extends Service{
 
     private final IBinder mBinder = new AgentBinder();
 
-    private static final int READY = 1;
-    private static final int WAITING = 2;
-    private static final int WARNING = 3;
-    private static final int REPORTING = 4;
-    private static final String GROUP_KEY_AlARMS = "group_key_alarms";
+    private static final String GROUP_KEY_AlARMS = "group_key_alerts";
 
-    private IntentFilter intentFilter;
-    private MainActivity mapsActivity;
+    private AppCompatActivity mContext;
+    private ServerListener serverListener;
+    private Timer mTimer;
 
-    private double _latitude;
-    private double _longitude;
-    private String _userId;
-    private int _status;
+    private double mLatitude;
+    private double mLongitude;
+    private String mUserId;
 
     private Socket socket;
     {
         try{
-            socket = IO.socket("http://192.168.1.69:3000");
+            socket = IO.socket(GlobalSettings.getInstance().getSocketIOAddress());
         }catch(URISyntaxException e){
             throw new RuntimeException(e);
         }
@@ -57,6 +57,8 @@ public class Agent extends Service{
     @Override
     public void onCreate(){
         super.onCreate();
+
+        mTimer = new Timer();
 
         Toast.makeText(this, "Agent Created", Toast.LENGTH_SHORT).show();
     }
@@ -75,33 +77,27 @@ public class Agent extends Service{
 
         Toast.makeText(this, "Agent Binded", Toast.LENGTH_SHORT).show();
 
-        return mBinder;
-    }
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
 
-    @Override
-    public void onDestroy(){
-        super.onDestroy();
+                //Avoid to add to tail the requests
+                if(isServerConnected())
+                    socket.emit("onIsUserSignedIn", mUserId);
+            }
+        }, 0,5000);
 
-        Toast.makeText(this, "Agent Destroyed", Toast.LENGTH_SHORT).show();
-    }
+        //Listen events from server
 
-    //Methods
-    public void connectToRemoteServer(){
-        socket.connect();
-        socket.on("onJoin", new Emitter.Listener() {
+        socket.on("onSignedIn", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 JSONObject data = (JSONObject) args[0];
 
-                String status = data.optString("status");
+                Boolean status = Boolean.parseBoolean(data.optString("status"));
+                String msg = data.optString("msg");
 
-                if (status.equals("200")) {
-                    _status = READY;
-                    AgentTask agentTask = new AgentTask();
-                    agentTask.run();
-                } else
-                    _status = WAITING;
-
+                serverListener.onSignedIn(status, msg);
             }
         });
 
@@ -112,7 +108,6 @@ public class Agent extends Service{
                     //Retrieving information
                     JSONObject data = (JSONObject) args[0];
                     Alert alert = new Alert();
-                    //alert.setUserId(data.getString("userId"));
                     alert.setAlertType(data.getInt("alertTypeId"));
                     alert.setLatitude(data.getDouble("latitude"));
                     alert.setLongitude(data.getDouble("longitude"));
@@ -121,7 +116,7 @@ public class Agent extends Service{
                     String notiTitle = "";
                     String notiContent = "";
 
-                    switch (alert.getAlertType()){
+                    switch (alert.getAlertType()) {
 
                         case 1:
                             notiTitle = "Robo Reportado!!!";
@@ -136,8 +131,8 @@ public class Agent extends Service{
                             break;
                     }
 
-                    //Create and throw notification
-                    NotificationCompat.Builder notification = new NotificationCompat.Builder(mapsActivity);
+                    // Build the notification, setting the group appropriately
+                    NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext);
                     notification.setSmallIcon(android.R.drawable.stat_notify_chat);
                     notification.setContentTitle(notiTitle);
                     notification.setContentText(notiContent);
@@ -145,40 +140,70 @@ public class Agent extends Service{
                     notification.setTicker("Alerta!!!");
                     notification.setAutoCancel(true);
 
-                    Intent intent = new Intent(mapsActivity, MainActivity.class);
+                    Intent intent = new Intent(mContext, MainActivity.class);
                     intent.putExtra(String.valueOf(alert.getLatitude()), "alertLatitude");
                     intent.putExtra(String.valueOf(alert.getLongitude()), "alertLongitude");
 
-                    PendingIntent pendientIntent =  PendingIntent.getActivity(mapsActivity, 0, intent, 0);
+                    PendingIntent pendientIntent = PendingIntent.getActivity(mContext, 0, intent, 0);
 
                     notification.setContentIntent(pendientIntent);
 
+                    // Issue the notification
                     NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     nm.notify(10, notification.build());
+
+                    //Dispatch event
+                    serverListener.onAlertReceived(alert);
                 } catch (JSONException e) {
                     Log.e("Agent", "onAlert: Error retrieving information, " + e.getMessage());
-                }catch (Exception e){
+                } catch (Exception e) {
                     Log.e("Agent", "onAlert: " + e.getMessage());
                 }
             }
         });
 
+        socket.on("onIsUserSignedIn", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Boolean result = Boolean.parseBoolean(args[0].toString());
+
+                if (!result)
+                    signIn();
+            }
+        });
+
+
+        return mBinder;
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+
+        Toast.makeText(this, "Agent Destroyed", Toast.LENGTH_SHORT).show();
+    }
+
+    ///////////////////////////////////////////Methods//////////////////////////////////////////////
+
+    public void connectToRemoteServer(){
+        socket.connect();
+    }
+
+    public void signIn(){
         JSONObject data = new JSONObject();
         try {
-            data.put("userId", _userId);
-            data.put("latitude", _latitude);
-            data.put("longitude", _longitude);
+            data.put("userId", mUserId);
+            data.put("latitude", mLatitude);
+            data.put("longitude", mLongitude);
         } catch (JSONException e) {
             Log.e("Agent", e.getMessage());
         }
 
-        socket.emit("onJoin", data);
+        socket.emit("onSignIn", data);
     }
 
     public void sendAlert(int alertType, double latitude, double longitude){
-
         JSONObject data = new JSONObject();
-
         try {
             data.put("alertTypeId", alertType);
             data.put("latitude", latitude);
@@ -190,53 +215,54 @@ public class Agent extends Service{
         socket.emit("onAlert", data);
     }
 
-    //Getters and Setters
-    public double getLatitude() {
-        return  _latitude;
-    }
-
-    public void setLatitude(double latitude)  {
-        _latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return  _longitude;
-    }
-
-    public void setLongitude(double longitude)  {
-        _longitude = longitude;
-    }
-
-    public String getUserId() {
-        return _userId ;
-    }
-
-    public void setUserId(String userId)  {
-        _userId = userId;
-    }
-
-    public int getStatus(){
-        return _status;
-    }
-
-    public void setStatus(int status){
-        _status = status;
-    }
-
-    public MainActivity getMapsActivity() {
-        return mapsActivity;
-    }
-
-    public void setMapsActivity(MainActivity mapsActivity) {
-        this.mapsActivity = mapsActivity;
-    }
-
     public  boolean isServerConnected(){
-
         if(socket != null)
             return  socket.connected();
         else
             return  false;
+    }
+
+    public void registerClient(Activity activity){
+        serverListener = (ServerListener)activity;
+    }
+
+    public interface ServerListener{
+        void onAlertReceived(Alert data);
+        void onSignedIn(boolean result, String msg);
+    }
+
+    ////////////////////////////////////////Getters and Setters/////////////////////////////////////
+
+    public double getLatitude() {
+        return mLatitude;
+    }
+
+    public void setLatitude(double latitude)  {
+        mLatitude = latitude;
+    }
+
+    public double getLongitude() {
+        return mLongitude;
+    }
+
+    public void setLongitude(double longitude)  {
+        mLongitude = longitude;
+}
+
+    public String getUserId() {
+        return mUserId;
+    }
+
+    public void setUserId(String userId)  {
+        mUserId = userId;
+    }
+
+    public AppCompatActivity getContext() {
+        return mContext;
+    }
+
+    public void setConetext(AppCompatActivity context) {
+        this.mContext = context;
     }
 
     /**

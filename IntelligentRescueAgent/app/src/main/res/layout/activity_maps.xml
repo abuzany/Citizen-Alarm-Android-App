@@ -6,7 +6,7 @@
     android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.intelligentrescueagent.MapsActivity" >
+    tools:context=".MapsActivity" >
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
@@ -14,8 +14,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:layout_margin="@dimen/fab_margin"
-        android:background="@color/colorAccent"
+        android:background="@color/colorRed"
         android:scaleType="center"
-        android:src="@mipmap/ic_error_outline_black_36dp" />
+        android:src="@mipmap/ic_report" />
 
 </fragment>

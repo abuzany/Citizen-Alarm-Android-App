@@ -11,14 +11,14 @@ import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 /**
  * Created by abuza on 20/03/2016.
  */
-public class ClusterRender extends DefaultClusterRenderer<AlarmMark> {
+public class ClusterRender extends DefaultClusterRenderer<AlertMarker> {
 
-    public ClusterRender(Context context, GoogleMap map, ClusterManager<AlarmMark> clusterManager) {
+    public ClusterRender(Context context, GoogleMap map, ClusterManager<AlertMarker> clusterManager) {
         super(context, map, clusterManager);
     }
 
     @Override
-    protected void onBeforeClusterItemRendered(AlarmMark item, MarkerOptions markerOptions) {
+    protected void onBeforeClusterItemRendered(AlertMarker item, MarkerOptions markerOptions) {
         super.onBeforeClusterItemRendered(item, markerOptions);
 
         markerOptions.title(item.getTitle());
@@ -26,7 +26,7 @@ public class ClusterRender extends DefaultClusterRenderer<AlarmMark> {
     }
 
     @Override
-    protected void onClusterItemRendered(AlarmMark clusterItem, Marker marker) {
+    protected void onClusterItemRendered(AlertMarker clusterItem, Marker marker) {
         super.onClusterItemRendered(clusterItem, marker);
 
         //here you have access to the marker itself
