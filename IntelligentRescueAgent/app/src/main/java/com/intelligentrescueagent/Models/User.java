@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class User {
 
-    @SerializedName("UserID")
+    @SerializedName("Id")
     private int userId;
 
     @SerializedName("FacebookID")
@@ -21,6 +21,8 @@ public class User {
 
     @SerializedName("CreationDate")
     private String creationDate;
+
+    private int role;
 
     public int getUserId() {
         return userId;
@@ -60,5 +62,13 @@ public class User {
 
     public void setCreationDate(String creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public int getRole() {
+        return role;
+    }
+
+    public void setRole(int role) {
+        this.role = role;
     }
 }

@@ -46,16 +46,16 @@ public interface APIService {
 
     /////////////////////////////////Use/////////////////////////////////
 
-    @POST("Users")
+    @POST("CAUsers")
     Call<User> postUser(@Body User user);
 
-    @GET("Users")
+    @GET("CAUsers")
     Call<List<User>> getUsers();
 
-    @GET("Users/{id}")
+    @GET("CAUsers/{id}")
     Call<User> getUser(@Path("id") int id);
 
-    @GET("Users/Facebook/{id}")
+    @GET("CAUsers/Facebook/{id}")
     Call<User> getUserByFacebookId(@Path("id") String id);
 
     /////////////////////////////////UserConfiguration/////////////////////////////////

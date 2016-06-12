@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -35,6 +36,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 import com.intelligentrescueagent.Framework.AIAgent.Agent;
 import com.intelligentrescueagent.Framework.GPS.GPSTracker;
+import com.intelligentrescueagent.Framework.GPS.Geocoder;
 import com.intelligentrescueagent.Framework.Maps.AlertMarker;
 import com.intelligentrescueagent.Framework.Maps.ClusterRender;
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
@@ -297,7 +299,6 @@ public class MainActivity extends AppCompatActivity
         mMap.setOnMarkerClickListener(mClusterManager);
         // Setting a custom info window adapter for the google map
         googleMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-
             // Use default InfoWindow frame
             @Override
             public View getInfoWindow(Marker arg0) {
@@ -313,6 +314,7 @@ public class MainActivity extends AppCompatActivity
                 TextView tvTitle = (TextView) v.findViewById(R.id.tvTitle);
                 TextView tvDescription = (TextView) v.findViewById(R.id.tvDescription);
                 TextView tvDate = (TextView) v.findViewById(R.id.tvDate);
+                TextView tvAddress = (TextView) v.findViewById(R.id.tvAddress);
 
                 String snnipet = marker.getSnippet();
 
@@ -323,6 +325,7 @@ public class MainActivity extends AppCompatActivity
                     tvTitle.setText(marker.getTitle());
                     tvDescription.setText(data[0]);
                     tvDate.setText(data[1]);
+                    tvAddress.setText(data[2]);
 
                     return v;
                 }
@@ -331,8 +334,6 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
-
-        createUserMarker();
 
         //Load Alerts
         getTodayAlerts();
@@ -368,6 +369,10 @@ public class MainActivity extends AppCompatActivity
             callPostAlert.enqueue(new Callback<Alert>() {
                 @Override
                 public void onResponse(Call<Alert> call, Response<Alert> response) {
+
+                    if(response.isSuccess())
+                        addAlertMarker(response.body());
+
                     Log.e(TAG, "PostAlert-onResponse: " + response.body());
                 }
 
@@ -376,8 +381,6 @@ public class MainActivity extends AppCompatActivity
                     Log.e(TAG, "PostAlert-onFailure: " + t.getMessage());
                 }
             });
-
-            addAlertMarker(alert);
         }
     }
 
@@ -553,7 +556,7 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
 
-        String snippet = alert.getDescription() + "|" + alert.getCreationDate();
+            String snippet = alert.getDescription() + "|" + alert.getCreationDate() +  "|" + alert.getAddress();
 
         alarmMark.setSnippet(snippet);
 

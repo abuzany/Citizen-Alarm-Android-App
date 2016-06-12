@@ -29,6 +29,9 @@ public class Alert {
     @SerializedName("Longitude")
     private double longitude;
 
+    @SerializedName("Address")
+    private String address;
+
     public int getId(){
         return this.id;
     }
@@ -83,5 +86,13 @@ public class Alert {
 
     public void setLongitude(double longitude){
         this.longitude = longitude;
+    }
+
+    public String getAddress(){
+        return this.address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

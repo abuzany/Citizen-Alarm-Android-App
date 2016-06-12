@@ -80,7 +80,6 @@ public class Agent extends Service{
         mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-
                 //Avoid to add to tail the requests
                 if(isServerConnected())
                     socket.emit("onIsUserSignedIn", mUserId);
@@ -195,6 +194,7 @@ public class Agent extends Service{
             data.put("userId", mUserId);
             data.put("latitude", mLatitude);
             data.put("longitude", mLongitude);
+            data.put("roleId", 2);
         } catch (JSONException e) {
             Log.e("Agent", e.getMessage());
         }
@@ -205,6 +205,7 @@ public class Agent extends Service{
     public void sendAlert(int alertType, double latitude, double longitude){
         JSONObject data = new JSONObject();
         try {
+            data.put("userId", mUserId);
             data.put("alertTypeId", alertType);
             data.put("latitude", latitude);
             data.put("longitude", longitude);
