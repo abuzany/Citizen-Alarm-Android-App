@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -22,21 +22,21 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 import com.intelligentrescueagent.Framework.AIAgent.Agent;
 import com.intelligentrescueagent.Framework.GPS.GPSTracker;
-import com.intelligentrescueagent.Framework.GPS.Geocoder;
 import com.intelligentrescueagent.Framework.Maps.AlertMarker;
 import com.intelligentrescueagent.Framework.Maps.ClusterRender;
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
@@ -45,15 +45,11 @@ import com.intelligentrescueagent.Framework.Settings.GlobalSettings;
 import com.intelligentrescueagent.Models.Alert;
 import com.intelligentrescueagent.Models.UserConfiguration;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -64,7 +60,6 @@ public class MainActivity extends AppCompatActivity
                    AlertChooserDialog.Comunicator, AlertHistoricChooserDialog.Comunicator,
                    Agent.ServerListener{
 
-    private static final int REQUEST_CODE = 924;
     private static final int SETTINGS_RESULT = 1;
     private static final String TAG = "MainActivity";
 
@@ -109,7 +104,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        //Initialize
+        //Initialize objects and variables
         mHTTPClient = ServiceGenertor.createService(APIService.class);
         mMarkers = new HashMap<Marker, String>();
 
@@ -149,41 +144,14 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-        //Init Agent
         //Bind to Agent service
         Intent intent = new Intent(this, Agent.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
-        if (mIsBound) {
-            //Set Agent information
-            mAgentService.setLatitude(mLatitude);
-            mAgentService.setLongitude(mLongitude);
-            mAgentService.setUserId(mUserId);
-            mAgentService.setConetext(MainActivity.this);
-
-            if (!mAgentService.isServerConnected()) {
-                mAgentService.connectToRemoteServer();
-                mAgentService.signIn();
-            }
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (mIsBound) {
-            //Set Agent information
-            mAgentService.setLatitude(mLatitude);
-            mAgentService.setLongitude(mLongitude);
-            mAgentService.setUserId(mUserId);
-            mAgentService.setConetext(this);
-
-            if (!mAgentService.isServerConnected()) {
-                mAgentService.connectToRemoteServer();
-                mAgentService.signIn();
-            }
-        }
     }
 
     @Override
@@ -394,21 +362,26 @@ public class MainActivity extends AppCompatActivity
             displayUserSettings();
         }
     }
-
     /////////////////////////////////////Agent Events///////////////////////////////////////////////
-
     @Override
-    public void onAlertReceived(Alert data) {
+    public void onAlertReceived(final Alert alert) {
+        Handler mainHandler = new Handler(this.getMainLooper());
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                addAlertMarker(alert);
 
+                LatLng alertLatLng = new LatLng(alert.getLatitude(), alert.getLongitude());
+
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(alertLatLng, 50));
+            }
+        });
     }
 
     @Override
-    public void onSignedIn(boolean result, String msg) {
-
+    public void onSignedIn(int result, String msg) {
     }
-
     ////////////////////////////////////////Methods/////////////////////////////////////////////////
-
     private void getTodayAlerts(){
         createUserMarker();
 
@@ -556,7 +529,7 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
 
-            String snippet = alert.getDescription() + "|" + alert.getCreationDate() +  "|" + alert.getAddress();
+        String snippet = alert.getDescription() + "|" + alert.getCreationDate() +  "|" + alert.getAddress();
 
         alarmMark.setSnippet(snippet);
 
@@ -576,10 +549,9 @@ public class MainActivity extends AppCompatActivity
             mAgentService.setLatitude(mLatitude);
             mAgentService.setLongitude(mLongitude);
             mAgentService.setUserId(mUserId);
-            mAgentService.setConetext(MainActivity.this);
-
-            //Register client
+            mAgentService.setContext(MainActivity.this);
             mAgentService.registerClient(MainActivity.this);
+            mAgentService.wakeUp();
 
             if (!mAgentService.isServerConnected()){
                 mAgentService.connectToRemoteServer();

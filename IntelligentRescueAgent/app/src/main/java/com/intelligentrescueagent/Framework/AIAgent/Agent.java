@@ -36,6 +36,7 @@ public class Agent extends Service{
     private final IBinder mBinder = new AgentBinder();
 
     private static final String GROUP_KEY_AlARMS = "group_key_alerts";
+    private static final String TAG = "MainActivity";
 
     private AppCompatActivity mContext;
     private ServerListener serverListener;
@@ -44,11 +45,10 @@ public class Agent extends Service{
     private double mLatitude;
     private double mLongitude;
     private String mUserId;
-
-    private Socket socket;
+    private Socket mSocket;
     {
         try{
-            socket = IO.socket(GlobalSettings.getInstance().getSocketIOAddress());
+            mSocket = IO.socket(GlobalSettings.getInstance().getSocketIOAddress());
         }catch(URISyntaxException e){
             throw new RuntimeException(e);
         }
@@ -57,50 +57,37 @@ public class Agent extends Service{
     @Override
     public void onCreate(){
         super.onCreate();
-
-        mTimer = new Timer();
-
         Toast.makeText(this, "Agent Created", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         super.onStartCommand(intent, flags, startId);
-
         Toast.makeText(this, "Agent Started", Toast.LENGTH_SHORT).show();
-
         return START_STICKY;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-
         Toast.makeText(this, "Agent Binded", Toast.LENGTH_SHORT).show();
 
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                //Avoid to add to tail the requests
-                if(isServerConnected())
-                    socket.emit("onIsUserSignedIn", mUserId);
-            }
-        }, 0,5000);
+        //Initialize objects and variables
+        mTimer = new Timer();
 
         //Listen events from server
-
-        socket.on("onSignedIn", new Emitter.Listener() {
+        mSocket.on("onSignedIn", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 JSONObject data = (JSONObject) args[0];
 
-                Boolean status = Boolean.parseBoolean(data.optString("status"));
+                Integer status = Integer.parseInt(data.optString("status"));
                 String msg = data.optString("msg");
 
                 serverListener.onSignedIn(status, msg);
             }
         });
 
-        socket.on("onAlert", new Emitter.Listener() {
+        mSocket.on("onAlert", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 try {
@@ -110,6 +97,9 @@ public class Agent extends Service{
                     alert.setAlertType(data.getInt("alertTypeId"));
                     alert.setLatitude(data.getDouble("latitude"));
                     alert.setLongitude(data.getDouble("longitude"));
+                    alert.setCreationDate(data.getString("creationDate"));
+                    alert.setDescription(data.getString("description"));
+                    alert.setAddress(data.getString("address"));
 
                     //Build notification content
                     String notiTitle = "";
@@ -154,23 +144,21 @@ public class Agent extends Service{
                     //Dispatch event
                     serverListener.onAlertReceived(alert);
                 } catch (JSONException e) {
-                    Log.e("Agent", "onAlert: Error retrieving information, " + e.getMessage());
+                    Log.e(TAG, "onAlert: Error retrieving information, " + e.getMessage());
                 } catch (Exception e) {
-                    Log.e("Agent", "onAlert: " + e.getMessage());
+                    Log.e(TAG, "onAlert: " + e.getMessage());
                 }
             }
         });
 
-        socket.on("onIsUserSignedIn", new Emitter.Listener() {
+        mSocket.on("onIsUserSignedIn", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Boolean result = Boolean.parseBoolean(args[0].toString());
-
                 if (!result)
                     signIn();
             }
         });
-
 
         return mBinder;
     }
@@ -178,14 +166,13 @@ public class Agent extends Service{
     @Override
     public void onDestroy(){
         super.onDestroy();
-
         Toast.makeText(this, "Agent Destroyed", Toast.LENGTH_SHORT).show();
     }
 
     ///////////////////////////////////////////Methods//////////////////////////////////////////////
 
     public void connectToRemoteServer(){
-        socket.connect();
+        mSocket.connect();
     }
 
     public void signIn(){
@@ -199,7 +186,7 @@ public class Agent extends Service{
             Log.e("Agent", e.getMessage());
         }
 
-        socket.emit("onSignIn", data);
+        mSocket.emit("onSignIn", data);
     }
 
     public void sendAlert(int alertType, double latitude, double longitude){
@@ -213,12 +200,12 @@ public class Agent extends Service{
             Log.e("Agent", e.getMessage());
         }
 
-        socket.emit("onAlert", data);
+        mSocket.emit("onAlert", data);
     }
 
     public  boolean isServerConnected(){
-        if(socket != null)
-            return  socket.connected();
+        if(mSocket != null)
+            return  mSocket.connected();
         else
             return  false;
     }
@@ -227,9 +214,23 @@ public class Agent extends Service{
         serverListener = (ServerListener)activity;
     }
 
+    public void wakeUp(){
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                //Avoid to add to tail the requests
+                if(isServerConnected()){
+                    Log.e("AGENT", "ANGEL");
+                    Log.e("AGENT", "ID "+mUserId);
+                    mSocket.emit("onIsUserSignedIn", mUserId);
+                }
+            }
+        }, 0,5000);
+    }
+
     public interface ServerListener{
         void onAlertReceived(Alert data);
-        void onSignedIn(boolean result, String msg);
+        void onSignedIn(int result, String msg);
     }
 
     ////////////////////////////////////////Getters and Setters/////////////////////////////////////
@@ -262,7 +263,7 @@ public class Agent extends Service{
         return mContext;
     }
 
-    public void setConetext(AppCompatActivity context) {
+    public void setContext(AppCompatActivity context) {
         this.mContext = context;
     }
 
