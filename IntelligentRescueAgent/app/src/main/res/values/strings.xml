@@ -100,7 +100,6 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="title_activity_register">Registrar</string>
-
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password (optional)</string>
@@ -113,4 +112,37 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <!-- Common -->
+    <string name="robbery">Robo</string>
+    <string name="kidnapping">Secuestro</string>
+    <string name="accident">Accidente</string>
+    <!-- Strings related to user register -->
+    <string name="register_welcome_text">
+        "Bienvenido a Citizen Alarm, antes de comenzar a salvar al mundo debers proporcionar una alias"
+        recuerda que todo super heroe mantiene su identidad oculta, toda actividad que realizes en la
+        aplicación es totalmente anonima, por lo cual te recomendamos que tu alias no haga referencia
+        a tu identidad real.
+    </string>
+    <string name="btnRegister_text">Registrar</string>
+    <!-- Strings related to alert chooser -->
+    <string name="alert_chooser_header_text">Reportar</string>
+    <string name="alert_chooser_btnSendAlert_text">Enviar</string>
+    <string name="alert_chooser_txtAlertDescription_text">Descripción en 140 caracteres</string>
+    <string name="alert_chooser_warning_1">Debes seleccionar una alerta</string>
+    <string name="alert_chooser_warning_2">Debes seleccionar una alerta</string>
+    <!-- Strings related to alert historic chooser -->
+    <string name="rbAll_text">Todas</string>
+    <string name="rbToday_text">Hoy</string>
+    <string name="rbWeek_text">Semana</string>
+    <string name="rbMonth_text">Mes</string>
+    <!-- Strings related to menu -->
+    <string name="miInit_text">Inicio</string>
+    <string name="miMyAlerts_text">Mis Alertas</string>
+    <string name="miSettings_text">Configuraciones</string>
+    <string name="miContact_text">Contacto</string>
+    <!-- Strings related to user configuration -->
+    <string name="user_configuration_dialog_header_text">Configuraciones Generales</string>
+    <string name="cbEnableNotifications_tittle_text">Recibir notificaciones cuando un usuario reporte una alerta</string>
+    <string name="seekBRange_tittle_text">Rango de recepción de alertas</string>
+    <string name="seekBRange_summary_text">Rango</string>
 </resources>

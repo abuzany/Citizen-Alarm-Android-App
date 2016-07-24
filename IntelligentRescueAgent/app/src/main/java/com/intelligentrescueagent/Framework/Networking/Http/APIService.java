@@ -1,5 +1,6 @@
 package com.intelligentrescueagent.Framework.Networking.Http;
 
+import com.intelligentrescueagent.Models.AgentTrackingLog;
 import com.intelligentrescueagent.Models.Alert;
 import com.intelligentrescueagent.Models.User;
 import com.intelligentrescueagent.Models.UserConfiguration;
@@ -44,7 +45,7 @@ public interface APIService {
     @POST("Alerts")
     Call<Alert> postAlert(@Body Alert alert);
 
-    /////////////////////////////////Use/////////////////////////////////
+    /////////////////////////////////User//////////////////////////////////////////////
 
     @POST("CAUsers")
     Call<User> postUser(@Body User user);
@@ -68,4 +69,9 @@ public interface APIService {
 
     @PUT("UserConfigurations/{id}")
     Call<UserConfiguration> putUserConfiguration(@Path("id") Integer id, @Body UserConfiguration userConfiguration);
+
+    /////////////////////////////////AgentTrackingLog////////////////////////////////////////
+
+    @POST("AgentTrackingLogs")
+    Call<AgentTrackingLog> postATL(@Body AgentTrackingLog atl);
 }

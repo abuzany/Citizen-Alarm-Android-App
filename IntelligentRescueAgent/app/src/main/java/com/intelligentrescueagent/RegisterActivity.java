@@ -10,6 +10,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.intelligentrescueagent.Framework.DataBase.DataBaseHelper;
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
 import com.intelligentrescueagent.Framework.Networking.Http.ServiceGenertor;
 import com.intelligentrescueagent.Models.User;
@@ -89,8 +90,13 @@ public class RegisterActivity extends AppCompatActivity{
                 postUserCall.enqueue(new Callback<User>() {
                     @Override
                     public void onResponse(Call<User> call, Response<User> response) {
+                        //Insert user in SQLite
+                        DataBaseHelper db = new DataBaseHelper(RegisterActivity.this);
+                        db.insertUser(mUser.getFacebookID(), mUser.getEmail(), mUser.getAlias());
+
                         //Open MainActivity
                         Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                        intent.putExtra("RegisterActivity","1");
                         intent.putExtra("userId", mUser.getFacebookID());
                         intent.putExtra("email", mUser.getEmail());
                         intent.putExtra("alias", mUser.getAlias());

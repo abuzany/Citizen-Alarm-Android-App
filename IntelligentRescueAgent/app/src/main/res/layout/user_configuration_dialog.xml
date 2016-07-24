@@ -3,11 +3,11 @@
     android:layout_height="match_parent"
     xmlns:sample="http://schemas.android.com/apk/res-auto">>
 
-    <PreferenceCategory android:title="Configuraciones Generales" >
+    <PreferenceCategory android:title="@string/user_configuration_dialog_header_text" >
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="prefEnabledNotification"
-            android:summary="Recibir notificaciones cuando un usuario reporte una alerta"
+            android:summary=""
             android:title="Habilitar notificaciones" >
         </CheckBoxPreference>
 

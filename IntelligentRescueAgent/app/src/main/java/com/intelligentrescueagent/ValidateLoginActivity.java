@@ -15,6 +15,7 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.login.LoginManager;
 import com.facebook.login.widget.LoginButton;
+import com.intelligentrescueagent.Framework.DataBase.DataBaseHelper;
 import com.intelligentrescueagent.Framework.Networking.Http.APIService;
 import com.intelligentrescueagent.Framework.Networking.Http.ServiceGenertor;
 import com.intelligentrescueagent.Models.User;
@@ -52,6 +53,9 @@ public class ValidateLoginActivity extends Activity {
 
         //Initialize
         mHTTPClient = ServiceGenertor.createService(APIService.class);
+
+        //Create db
+        DataBaseHelper db = new DataBaseHelper(this);
     }
 
     @Override
@@ -68,13 +72,12 @@ public class ValidateLoginActivity extends Activity {
     }
 
     //////////////////////////////////////////////Methods///////////////////////////////////////////
-
     private void updateWithToken(AccessToken currentAccessToken) {
-        if (currentAccessToken != null) {
+        if (currentAccessToken != null)
             OpenMainActivity();
-        } else {
+        else
             OpenLoginActivity();
-        }
+
     }
 
     private void OpenLoginActivity() {
@@ -101,7 +104,7 @@ public class ValidateLoginActivity extends Activity {
                                     @Override
                                     public void onResponse(Call<User> call, Response<User> response) {
                                         User user = response.body();
-                                        //If the user doesn't exist so regiter it
+                                        //If the user doesn't exist so register it
                                         if(user == null){
                                             //Open RegisterActivity
                                             Intent intent = new Intent(ValidateLoginActivity.this, RegisterActivity.class);
@@ -114,8 +117,6 @@ public class ValidateLoginActivity extends Activity {
                                             //Open MainActivity
                                             Intent intent = new Intent(ValidateLoginActivity.this, MainActivity.class);
                                             intent.putExtra("userId", user.getFacebookID());
-                                            intent.putExtra("email", user.getEmail());
-                                            intent.putExtra("alias", user.getAlias());
 
                                             startActivity(intent);
                                         }

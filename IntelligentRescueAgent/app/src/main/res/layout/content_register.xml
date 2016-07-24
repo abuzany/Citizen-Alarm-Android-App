@@ -16,9 +16,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Debes proporcionar una &quot;alias&quot; a fin de que los demas usuarios te identifiquen, recuerda que la apliacación es anonima  asi que nostoros no porporcionaremos ninguna dato acerca de tu informacón personal que te identifique, por lo cual te recomendamos que tu &quot;alias&quot;  no haga referencia a tu identidad real."
-        android:textAlignment="center"
-        android:id="@+id/textView2" />
+        android:text="@string/register_welcome_text"
+    android:textAlignment="center"
+    android:id="@+id/textView2" />
 
     <EditText
         android:layout_width="match_parent"
@@ -33,7 +33,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Listo"
+        android:text="@string/btnRegister_text"
         android:id="@+id/btnRegister"
         android:layout_gravity="center_horizontal"
         android:layout_below="@+id/txtAlias"

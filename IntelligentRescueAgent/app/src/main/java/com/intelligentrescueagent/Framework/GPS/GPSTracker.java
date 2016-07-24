@@ -17,6 +17,8 @@ import android.util.Log;
  * Created by Angel Buzany on 06/01/2016.
  */
 public class GPSTracker extends Service implements LocationListener{
+    private final static String TAG = "GPSTracker";
+
     private final Context mContext;
 
     // flag for GPS status
@@ -90,7 +92,7 @@ public class GPSTracker extends Service implements LocationListener{
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "getLocation: " + e.getMessage());
         }
 
         return location;

@@ -107,12 +107,12 @@ public class AlertChooserDialog extends DialogFragment implements View.OnClickLi
 
             //Sanity check
             if(rbSelectedId == -1){
-                Toast.makeText(getActivity(), "Debes seleccionar una alerta", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(),getString(R.string.alert_chooser_warning_1), Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if(alertDescription.equals("")){
-                Toast.makeText(getActivity(), "Debes agregar una decripción", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), getString(R.string.alert_chooser_warning_2), Toast.LENGTH_SHORT).show();
                 return;
             }
 

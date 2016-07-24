@@ -131,6 +131,7 @@ public class LoginActivity extends AppCompatActivity {
                                         else{
                                             //Open MainActivity
                                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                            intent.putExtra("LoginActivity","1");
                                             intent.putExtra("userId", user.getFacebookID());
                                             intent.putExtra("email", user.getEmail());
                                             intent.putExtra("alias", user.getAlias());

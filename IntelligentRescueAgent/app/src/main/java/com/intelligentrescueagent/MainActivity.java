@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -35,7 +36,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
+import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.intelligentrescueagent.Framework.AIAgent.Agent;
+import com.intelligentrescueagent.Framework.DataBase.DataBaseHelper;
 import com.intelligentrescueagent.Framework.GPS.GPSTracker;
 import com.intelligentrescueagent.Framework.Maps.AlertMarker;
 import com.intelligentrescueagent.Framework.Maps.ClusterRender;
@@ -62,6 +65,8 @@ public class MainActivity extends AppCompatActivity
 
     private static final int SETTINGS_RESULT = 1;
     private static final String TAG = "MainActivity";
+
+    public static boolean IsRuning = false;
 
     private GoogleMap mMap;
     private GPSTracker mGPS;
@@ -108,13 +113,19 @@ public class MainActivity extends AppCompatActivity
         mHTTPClient = ServiceGenertor.createService(APIService.class);
         mMarkers = new HashMap<Marker, String>();
 
-        //Retrieve information
+        //Retrieve information from previous activity
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             mUserId = extras.getString("userId");
-            mAlias = extras.getString("alias");
-            mEmail = extras.getString("email");
         }
+
+        //Retrieve user information from db
+        DataBaseHelper db = new DataBaseHelper(this);
+        Cursor cr =  db.selectUserByFbId(mUserId);
+        cr.moveToFirst();
+
+        mAlias = cr.getString(2);
+        mEmail = cr.getString(3);
 
         //Get current location
         mGPS = new GPSTracker(MainActivity.this);
@@ -139,6 +150,8 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         getUserConfigurations();
+
+        IsRuning = true;
     }
 
     @Override
@@ -167,6 +180,8 @@ public class MainActivity extends AppCompatActivity
             unbindService(mConnection);
             mIsBound = false;
         }
+
+        IsRuning = false;
     }
 
     @Override
@@ -287,7 +302,7 @@ public class MainActivity extends AppCompatActivity
                 String snnipet = marker.getSnippet();
 
                 if(snnipet != null){
-                    String[] data = marker.getSnippet().split("\\|");
+                    String[] data = snnipet.split("\\|");
 
                     //Setting data
                     tvTitle.setText(marker.getTitle());
@@ -318,9 +333,6 @@ public class MainActivity extends AppCompatActivity
             String alertDescription = data[1];
             LatLng alertPosition = mUserMarker.getPosition();
 
-            //Issue alert
-            mAgentService.sendAlert(alertType, alertPosition.latitude, alertPosition.longitude);
-
             //Save alert through APIRest
             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             Date date = new Date();
@@ -333,34 +345,20 @@ public class MainActivity extends AppCompatActivity
             alert.setLatitude(alertPosition.latitude);
             alert.setLongitude(alertPosition.longitude);
 
-            Call<Alert> callPostAlert = mHTTPClient.postAlert(alert);
-            callPostAlert.enqueue(new Callback<Alert>() {
-                @Override
-                public void onResponse(Call<Alert> call, Response<Alert> response) {
+            addAlertMarker(alert);
 
-                    if(response.isSuccess())
-                        addAlertMarker(response.body());
-
-                    Log.e(TAG, "PostAlert-onResponse: " + response.body());
-                }
-
-                @Override
-                public void onFailure(Call<Alert> call, Throwable t) {
-                    Log.e(TAG, "PostAlert-onFailure: " + t.getMessage());
-                }
-            });
+            //Issue alert
+            mAgentService.sendAlert(alert);
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode==SETTINGS_RESULT)
-        {
             displayUserSettings();
-        }
+
     }
     /////////////////////////////////////Agent Events///////////////////////////////////////////////
     @Override
@@ -389,7 +387,6 @@ public class MainActivity extends AppCompatActivity
         getAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
-
                 if(response.isSuccess()){
                     List<Alert> alertList = response.body();
 
@@ -415,15 +412,12 @@ public class MainActivity extends AppCompatActivity
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
-
                 if(response.isSuccess()){
                     List<Alert> alertList = response.body();
-
                     if(alertList != null){
                         if(alertList.size() > 0){
-                            for (Alert alert : alertList){
+                            for (Alert alert : alertList)
                                 addAlertMarker(alert);
-                            }
                         }
                     }
                 }
@@ -441,15 +435,12 @@ public class MainActivity extends AppCompatActivity
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
-
                 if(response.isSuccess()){
                     List<Alert> alertList = response.body();
-
                     if(alertList != null){
                         if(alertList.size() > 0){
-                            for (Alert alert : alertList){
+                            for (Alert alert : alertList)
                                 addAlertMarker(alert);
-                            }
                         }
                     }
                 }
@@ -469,12 +460,10 @@ public class MainActivity extends AppCompatActivity
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
                 if (response.isSuccess()) {
                     List<Alert> alertList = response.body();
-
                     if (alertList != null) {
                         if (alertList.size() > 0) {
-                            for (Alert alert : alertList) {
+                            for (Alert alert : alertList)
                                 addAlertMarker(alert);
-                            }
                         }
                     }
                 }
@@ -494,12 +483,10 @@ public class MainActivity extends AppCompatActivity
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
                 if (response.isSuccess()) {
                     List<Alert> alertList = response.body();
-
                     if (alertList != null) {
                         if (alertList.size() > 0) {
-                            for (Alert alert : alertList) {
+                            for (Alert alert : alertList)
                                 addAlertMarker(alert);
-                            }
                         }
                     }
                 }
@@ -515,25 +502,25 @@ public class MainActivity extends AppCompatActivity
     public void addAlertMarker(Alert alert){
         LatLng position = new LatLng(alert.getLatitude(), alert.getLongitude());
 
-        AlertMarker alarmMark = new AlertMarker(position);
+        AlertMarker am = new AlertMarker(position);
 
         switch (alert.getAlertType()){
             case 1:
-                alarmMark.setTitle("Robo");
+                am.setTitle(getString(R.string.robbery));
                 break;
             case 2:
-                alarmMark.setTitle("Accidente");
+                am.setTitle(getString(R.string.accident));
                 break;
             case 3:
-                alarmMark.setTitle("Secuestro");
+                am.setTitle(getString(R.string.kidnapping));
                 break;
         }
 
         String snippet = alert.getDescription() + "|" + alert.getCreationDate() +  "|" + alert.getAddress();
 
-        alarmMark.setSnippet(snippet);
+        am.setSnippet(snippet);
 
-        mClusterManager.addItem(alarmMark);
+        mClusterManager.addItem(am);
         mClusterManager.cluster();
     }
 
@@ -546,17 +533,9 @@ public class MainActivity extends AppCompatActivity
             mIsBound = true;
 
             //Set Agent information
-            mAgentService.setLatitude(mLatitude);
-            mAgentService.setLongitude(mLongitude);
             mAgentService.setUserId(mUserId);
             mAgentService.setContext(MainActivity.this);
             mAgentService.registerClient(MainActivity.this);
-            mAgentService.wakeUp();
-
-            if (!mAgentService.isServerConnected()){
-                mAgentService.connectToRemoteServer();
-                mAgentService.signIn();
-            }
         }
 
         @Override
@@ -582,7 +561,6 @@ public class MainActivity extends AppCompatActivity
                 .itemsCallbackSingleChoice(-1, new MaterialDialog.ListCallbackSingleChoice() {
                     @Override
                     public boolean onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-
                         switch (which) {
                             case 0:
                                 getUserAlerts();
@@ -622,17 +600,7 @@ public class MainActivity extends AppCompatActivity
                 usrConfiguration.setEnabledNotifications(sharedPrefs.getBoolean("prefEnabledNotification", false));
                 usrConfiguration.setRange((double) sharedPrefs.getInt("pregRange", 1));
 
-                Call<UserConfiguration> putUserConfigurations = mHTTPClient.putUserConfiguration(usrConfiguration.getId(), usrConfiguration);
-                putUserConfigurations.enqueue(new Callback<UserConfiguration>() {
-                    @Override
-                    public void onResponse(Call<UserConfiguration> call, Response<UserConfiguration> response) {
-                    }
-
-                    @Override
-                    public void onFailure(Call<UserConfiguration> call, Throwable t) {
-                        Log.e(TAG, "putUserConfiguration->onFailure: " + t.getMessage());
-                    }
-                });
+                mAgentService.updateUserConfiguration(usrConfiguration);
             }
 
             @Override

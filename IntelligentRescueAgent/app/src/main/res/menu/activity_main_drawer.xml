@@ -5,18 +5,18 @@
         <item
             android:id="@+id/nav_start"
             android:icon="@drawable/ic_action_map"
-            android:title="Inicio" />
+            android:title="@string/miInit_text" />
         <item
             android:id="@+id/nav_myalerts"
             android:icon="@drawable/ic_history"
-            android:title="Mis alertas" />
+            android:title="@string/miMyAlerts_text" />
         <item
             android:id="@+id/nav_configurations"
             android:icon="@drawable/ic_settings"
-            android:title="Configuraciones" />
+            android:title="@string/miSettings_text" />
     </group>
 
-    <item android:title="Contacto">
+    <item android:title="@string/miContact_text">
         <menu>
             <item
                 android:id="@+id/nav_share"
