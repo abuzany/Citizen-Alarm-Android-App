@@ -23,6 +23,7 @@ import com.intelligentrescueagent.Models.User;
 
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 import retrofit2.Call;
@@ -99,8 +100,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     //////////////////////////////////////////////Methods///////////////////////////////////////////
-
-
     private void OpenMainActivity(){
         AccessToken token = AccessToken.getCurrentAccessToken();
 
@@ -131,10 +130,7 @@ public class LoginActivity extends AppCompatActivity {
                                         else{
                                             //Open MainActivity
                                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                            intent.putExtra("LoginActivity","1");
-                                            intent.putExtra("userId", user.getFacebookID());
-                                            intent.putExtra("email", user.getEmail());
-                                            intent.putExtra("alias", user.getAlias());
+                                            intent.putExtra("user", user);
 
                                             startActivity(intent);
                                         }

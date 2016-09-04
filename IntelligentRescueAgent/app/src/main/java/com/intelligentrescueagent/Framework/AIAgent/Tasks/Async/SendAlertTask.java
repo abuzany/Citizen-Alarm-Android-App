@@ -1,4 +1,4 @@
-package com.intelligentrescueagent.Framework.AIAgent.Tasks;
+package com.intelligentrescueagent.Framework.AIAgent.Tasks.Async;
 
 import android.content.res.Resources;
 import android.os.AsyncTask;

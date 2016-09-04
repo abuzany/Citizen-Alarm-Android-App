@@ -116,6 +116,7 @@
     <string name="robbery">Robo</string>
     <string name="kidnapping">Secuestro</string>
     <string name="accident">Accidente</string>
+    <string name="alert">Alerta</string>
     <!-- Strings related to user register -->
     <string name="register_welcome_text">
         "Bienvenido a Citizen Alarm, antes de comenzar a salvar al mundo debers proporcionar una alias"
@@ -145,4 +146,8 @@
     <string name="cbEnableNotifications_tittle_text">Recibir notificaciones cuando un usuario reporte una alerta</string>
     <string name="seekBRange_tittle_text">Rango de recepción de alertas</string>
     <string name="seekBRange_summary_text">Rango</string>
+    <!-- Strings related to alert notification -->
+    <string name="noti_roobery_reported_text">Robo reportado</string>
+    <string name="noti_kidnaping_reported_text">Secuestro reportado</string>
+    <string name="noti_accident_reported_text">Accidente reportado</string>
 </resources>

@@ -2,10 +2,12 @@ package com.intelligentrescueagent.Models;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+
 /**
  * Created by Angel Buzany on 02/03/2016.
  */
-public class User {
+public class User implements Serializable{
 
     @SerializedName("Id")
     private int userId;

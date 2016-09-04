@@ -21,11 +21,11 @@ public class GlobalSettings {
     }
 
     public String getSocketIOAddress() {
-        return "http://192.168.1.70:3000";
+        return "http://192.168.100.13:3000";
     }
 
     public String getAPIRestAddress() {
-        return "http://192.168.1.70/BertholdAPIRest/api/";
+        return "http://192.168.100.13/BertholdAPIRest/api/";
     }
 
     public void setLoginManager(LoginManager loginManager) {

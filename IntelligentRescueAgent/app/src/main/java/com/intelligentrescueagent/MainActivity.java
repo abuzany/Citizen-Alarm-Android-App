@@ -46,6 +46,8 @@ import com.intelligentrescueagent.Framework.Networking.Http.APIService;
 import com.intelligentrescueagent.Framework.Networking.Http.ServiceGenertor;
 import com.intelligentrescueagent.Framework.Settings.GlobalSettings;
 import com.intelligentrescueagent.Models.Alert;
+import com.intelligentrescueagent.Models.KatinkResponse;
+import com.intelligentrescueagent.Models.User;
 import com.intelligentrescueagent.Models.UserConfiguration;
 
 import java.text.DateFormat;
@@ -58,6 +60,9 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * Created by Angel Buzany on 06/01/2016.
+ */
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback,
                    AlertChooserDialog.Comunicator, AlertHistoricChooserDialog.Comunicator,
@@ -70,21 +75,18 @@ public class MainActivity extends AppCompatActivity
 
     private GoogleMap mMap;
     private GPSTracker mGPS;
-    private Agent mAgentService;
+    //private Agent mAgentService;
     private Marker mUserMarker;
     private APIService mHTTPClient;
     private ClusterManager<AlertMarker> mClusterManager;
     private HashMap<Marker, String> mMarkers;
+    private User mUser;
 
     private boolean mIsBound = false;
     private double mLatitude;
     private double mLongitude;
-    private String mUserId;
-    private String mAlias;
-    private String mEmail;
 
-    //////////////////////////////////Events//////////////////////////////////
-
+    ///////////////////////////////////////////////Events///////////////////////////////////////////
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,18 +116,7 @@ public class MainActivity extends AppCompatActivity
         mMarkers = new HashMap<Marker, String>();
 
         //Retrieve information from previous activity
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            mUserId = extras.getString("userId");
-        }
-
-        //Retrieve user information from db
-        DataBaseHelper db = new DataBaseHelper(this);
-        Cursor cr =  db.selectUserByFbId(mUserId);
-        cr.moveToFirst();
-
-        mAlias = cr.getString(2);
-        mEmail = cr.getString(3);
+        mUser = (User) getIntent().getSerializableExtra("user");
 
         //Get current location
         mGPS = new GPSTracker(MainActivity.this);
@@ -140,10 +131,10 @@ public class MainActivity extends AppCompatActivity
 
         //Set UI Information
         TextView tvAlias = (TextView)navigationView.getHeaderView(0).findViewById(R.id.tvAlias);
-        tvAlias.setText(mAlias);
+        tvAlias.setText(mUser.getAlias());
 
         TextView tvEmail = (TextView)navigationView.getHeaderView(0).findViewById(R.id.tvEmail);
-        tvEmail.setText(mEmail);
+        tvEmail.setText(mUser.getEmail());
 
         //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -159,7 +150,9 @@ public class MainActivity extends AppCompatActivity
         super.onStart();
         //Bind to Agent service
         Intent intent = new Intent(this, Agent.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        intent.putExtra("action","up");
+        intent.putExtra("userId", mUser.getFacebookID());
+        startService(intent);
     }
 
     @Override
@@ -177,7 +170,7 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
         //Unbind from the service
         if (mIsBound) {
-            unbindService(mConnection);
+            //unbindService(mConnection);
             mIsBound = false;
         }
 
@@ -189,7 +182,7 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
         // Unbind from the service
         if (mIsBound) {
-            unbindService(mConnection);
+            //unbindService(mConnection);
             mIsBound = false;
         }
     }
@@ -226,7 +219,6 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
@@ -338,7 +330,7 @@ public class MainActivity extends AppCompatActivity
             Date date = new Date();
 
             Alert alert = new Alert();
-            alert.setUserId(mUserId);
+            alert.setUserId(mUser.getFacebookID());
             alert.setAlertType(alertType);
             alert.setCreationDate(dateFormat.format(date));
             alert.setDescription(alertDescription);
@@ -347,8 +339,7 @@ public class MainActivity extends AppCompatActivity
 
             addAlertMarker(alert);
 
-            //Issue alert
-            mAgentService.sendAlert(alert);
+            //mAgentService.sendAlert(alert);
         }
     }
 
@@ -358,15 +349,17 @@ public class MainActivity extends AppCompatActivity
 
         if(requestCode==SETTINGS_RESULT)
             displayUserSettings();
-
     }
+
     /////////////////////////////////////Agent Events///////////////////////////////////////////////
     @Override
-    public void onAlertReceived(final Alert alert) {
+    public void onAlertReceived(final KatinkResponse kr) {
         Handler mainHandler = new Handler(this.getMainLooper());
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                Alert alert = (Alert) kr.getContent();
+
                 addAlertMarker(alert);
 
                 LatLng alertLatLng = new LatLng(alert.getLatitude(), alert.getLongitude());
@@ -377,9 +370,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onSignedIn(int result, String msg) {
+    public void onSignedIn(KatinkResponse kr){
     }
+
     ////////////////////////////////////////Methods/////////////////////////////////////////////////
+    /*private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // We've bound to Agent, cast the IBinder and get LocalService instance
+            Agent.AgentBinder binder = (Agent.AgentBinder) service;
+            mAgentService = binder.getService();
+            mIsBound = true;
+
+            //Set Agent information
+            mAgentService.setUser(mUser);
+            mAgentService.setContext(MainActivity.this);
+            mAgentService.agentUp();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mIsBound = false;
+        }
+    };*/
+
     private void getTodayAlerts(){
         createUserMarker();
 
@@ -408,7 +422,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getUserAlerts(){
-        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getUserAlerts(mUserId);
+        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getUserAlerts(mUser.getFacebookID());
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
@@ -431,7 +445,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getTodayUserAlerts(){
-        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getTodayUserAlerts(mUserId);
+        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getTodayUserAlerts(mUser.getFacebookID());
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
@@ -454,7 +468,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getWeekUserAlerts(){
-        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getWeekUserAlerts(mUserId);
+        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getWeekUserAlerts(mUser.getFacebookID());
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
@@ -477,7 +491,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getMonthUserAlerts(){
-        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getMonthUserAlerts(mUserId);
+        Call<List<Alert>> getUserAlertsCall = mHTTPClient.getMonthUserAlerts(mUser.getFacebookID());
         getUserAlertsCall.enqueue(new Callback<List<Alert>>() {
             @Override
             public void onResponse(Call<List<Alert>> call, Response<List<Alert>> response) {
@@ -499,7 +513,7 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    public void addAlertMarker(Alert alert){
+    private void addAlertMarker(Alert alert){
         LatLng position = new LatLng(alert.getLatitude(), alert.getLongitude());
 
         AlertMarker am = new AlertMarker(position);
@@ -523,26 +537,6 @@ public class MainActivity extends AppCompatActivity
         mClusterManager.addItem(am);
         mClusterManager.cluster();
     }
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            // We've bound to Agent, cast the IBinder and get LocalService instance
-            Agent.AgentBinder binder = (Agent.AgentBinder) service;
-            mAgentService = binder.getService();
-            mIsBound = true;
-
-            //Set Agent information
-            mAgentService.setUserId(mUserId);
-            mAgentService.setContext(MainActivity.this);
-            mAgentService.registerClient(MainActivity.this);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mIsBound = false;
-        }
-    };
 
     private void cleanMap(){
         mMap.clear();
@@ -589,7 +583,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void displayUserSettings() {
-        Call<UserConfiguration> getUserConfigurationByFbId = mHTTPClient.getUserConfigurationByFbId(mUserId);
+        Call<UserConfiguration> getUserConfigurationByFbId = mHTTPClient.getUserConfigurationByFbId(mUser.getFacebookID());
         getUserConfigurationByFbId.enqueue(new Callback<UserConfiguration>() {
             @Override
             public void onResponse(Call<UserConfiguration> call, Response<UserConfiguration> response) {
@@ -600,7 +594,7 @@ public class MainActivity extends AppCompatActivity
                 usrConfiguration.setEnabledNotifications(sharedPrefs.getBoolean("prefEnabledNotification", false));
                 usrConfiguration.setRange((double) sharedPrefs.getInt("pregRange", 1));
 
-                mAgentService.updateUserConfiguration(usrConfiguration);
+                //mAgentService.updateUserConfiguration(usrConfiguration);
             }
 
             @Override
@@ -611,7 +605,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getUserConfigurations(){
-        Call<UserConfiguration> getUserConfigurationByFbId = mHTTPClient.getUserConfigurationByFbId(mUserId);
+        Call<UserConfiguration> getUserConfigurationByFbId = mHTTPClient.getUserConfigurationByFbId(mUser.getFacebookID());
         getUserConfigurationByFbId.enqueue(new Callback<UserConfiguration>() {
             @Override
             public void onResponse(Call<UserConfiguration> call, Response<UserConfiguration> response) {

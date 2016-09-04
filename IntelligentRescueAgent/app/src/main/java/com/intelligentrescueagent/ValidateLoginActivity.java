@@ -28,6 +28,8 @@ import retrofit2.Response;
 
 public class ValidateLoginActivity extends Activity {
 
+    private static String TAG = "ValidateLoginActivity";
+
     private CallbackManager mCallbackManager;
     private AccessTokenTracker mTokenTracker;
     private APIService mHTTPClient;
@@ -116,14 +118,14 @@ public class ValidateLoginActivity extends Activity {
                                         else{
                                             //Open MainActivity
                                             Intent intent = new Intent(ValidateLoginActivity.this, MainActivity.class);
-                                            intent.putExtra("userId", user.getFacebookID());
+                                            intent.putExtra("user", user);
 
                                             startActivity(intent);
                                         }
                                     }
                                     @Override
                                     public void onFailure(Call<User> call, Throwable t) {
-                                        Log.e("getUserByFacebookIdCall", "onFailure: " + t.getMessage());
+                                        Log.e(TAG, "onFailure: " + t.getMessage());
                                     }
                                 });
                             }
